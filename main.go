@@ -1,7 +1,8 @@
 package main
 
 import (
-	conatiners "docktui/views"
+	containerView "docktui/views/containers"
+	placeholderView "docktui/views/placeholder"
 	"fmt"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/docker/docker/api/types/container"
@@ -11,28 +12,20 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type sessionState uint
-
-const (
-	containerView sessionState = iota
-	containerView1
-)
-
 type model struct {
 	Tabs       []string
 	TabContent []tea.Model
 	activeTab  int
-	state      sessionState
-}
-
-type subModel struct {
-	model struct{}
 }
 
 func newModel() model {
-	m := model{state: containerView}
-	m.Tabs = []string{"Containers", "Test"}
-	m.TabContent = []tea.Model{conatiners.New(), conatiners.New()}
+	m := model{}
+	m.Tabs = []string{"Containers", "Some Tab", "Another Tab"}
+	m.TabContent = []tea.Model{
+		containerView.New(),
+		placeholderView.New("My tab content"),
+		placeholderView.New("Woaow some more text"),
+	}
 	return m
 }
 
@@ -97,7 +90,7 @@ func (m model) View() string {
 		} else if isLast && !isActive {
 			border.BottomRight = "┤"
 		}
-		style = style.Border(border).Width(50)
+		style = style.Border(border).Width(40)
 		renderedTabs = append(renderedTabs, style.Render(t))
 	}
 
@@ -125,7 +118,7 @@ var (
 	highlightColor    = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "#7D56F4"}
 	inactiveTabStyle  = lipgloss.NewStyle().Border(inactiveTabBorder, true).BorderForeground(highlightColor).Padding(0, 1)
 	activeTabStyle    = inactiveTabStyle.Border(activeTabBorder, true).Foreground(lipgloss.Color("#7D56F4"))
-	windowStyle       = lipgloss.NewStyle().BorderForeground(highlightColor).Align(lipgloss.Center).Padding(0, 0).Border(lipgloss.NormalBorder()).UnsetBorderTop()
+	windowStyle       = lipgloss.NewStyle().BorderForeground(highlightColor).Height(18).Align(lipgloss.Center).Padding(0, 0).Border(lipgloss.NormalBorder()).UnsetBorderTop()
 	helpStyle         = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
 )
 

@@ -1,4 +1,4 @@
-package views
+package containers
 
 import (
 	"context"
@@ -17,7 +17,7 @@ type Model struct {
 }
 
 func New() Model {
-	// Initialize the table here with default setup
+	// Initialize table
 	columns := []table.Column{
 		{Title: "Name", Width: 20},
 		{Title: "Image", Width: 20},
