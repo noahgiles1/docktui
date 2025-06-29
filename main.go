@@ -90,7 +90,7 @@ func (m model) View() string {
 		} else if isLast && !isActive {
 			border.BottomRight = "┤"
 		}
-		style = style.Border(border).Width(40)
+		style = style.Border(border).Width(38)
 		renderedTabs = append(renderedTabs, style.Render(t))
 	}
 
@@ -99,8 +99,8 @@ func (m model) View() string {
 	doc.WriteString("\n")
 	doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TabContent[m.activeTab].View()))
 	doc.WriteString("\n")
-	s := docStyle.Render(doc.String()) + helpStyle.Render(fmt.Sprintf("\ntab: focus next • ↑ tab: focus prev • q: exit\n"))
-	return s
+	doc.WriteString(helpStyle.Align(lipgloss.Center).Render(fmt.Sprintf("\ntab: next • ↑tab: prev • q: exit\n")))
+	return docStyle.Render(doc.String())
 }
 
 func main() {
@@ -114,11 +114,11 @@ func main() {
 var (
 	inactiveTabBorder = tabBorderWithBottom("┴", "─", "┴")
 	activeTabBorder   = tabBorderWithBottom("┘", " ", "└")
-	docStyle          = lipgloss.NewStyle().Padding(1, 2, 1, 2)
+	docStyle          = lipgloss.NewStyle().Padding(1, 2, 1, 2).Align(lipgloss.Center)
 	highlightColor    = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "#7D56F4"}
 	inactiveTabStyle  = lipgloss.NewStyle().Border(inactiveTabBorder, true).BorderForeground(highlightColor).Padding(0, 1)
 	activeTabStyle    = inactiveTabStyle.Border(activeTabBorder, true).Foreground(lipgloss.Color("#7D56F4"))
-	windowStyle       = lipgloss.NewStyle().BorderForeground(highlightColor).Height(18).Align(lipgloss.Center).Padding(0, 0).Border(lipgloss.NormalBorder()).UnsetBorderTop()
+	windowStyle       = lipgloss.NewStyle().BorderForeground(highlightColor).Height(21).Align(lipgloss.Center).Padding(0, 0).Border(lipgloss.NormalBorder()).UnsetBorderTop()
 	helpStyle         = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
 )
 

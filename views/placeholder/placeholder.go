@@ -28,5 +28,5 @@ func (m Model) View() string {
 }
 
 var (
-	contentStyling = lipgloss.NewStyle().Padding(4, 2, 4, 2).Foreground(lipgloss.Color("50"))
+	contentStyling = lipgloss.NewStyle().Padding(4, 2, 0, 2).Foreground(lipgloss.Color("50"))
 )
