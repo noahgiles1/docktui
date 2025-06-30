@@ -18,13 +18,15 @@ type model struct {
 	activeTab  int
 }
 
+const width = 38
+
 func newModel() model {
 	m := model{}
 	m.Tabs = []string{"Containers", "Some Tab", "Another Tab"}
 	m.TabContent = []tea.Model{
 		containerView.New(),
-		placeholderView.New("My tab content"),
-		placeholderView.New("Woaow some more text"),
+		placeholderView.New("My tab content", width),
+		placeholderView.New("Woaow some more text", width),
 	}
 	return m
 }
@@ -90,7 +92,7 @@ func (m model) View() string {
 		} else if isLast && !isActive {
 			border.BottomRight = "┤"
 		}
-		style = style.Border(border).Width(38)
+		style = style.Border(border).Width(width)
 		renderedTabs = append(renderedTabs, style.Render(t))
 	}
 
@@ -118,7 +120,7 @@ var (
 	highlightColor    = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "#7D56F4"}
 	inactiveTabStyle  = lipgloss.NewStyle().Border(inactiveTabBorder, true).BorderForeground(highlightColor).Padding(0, 1)
 	activeTabStyle    = inactiveTabStyle.Border(activeTabBorder, true).Foreground(lipgloss.Color("#7D56F4"))
-	windowStyle       = lipgloss.NewStyle().BorderForeground(highlightColor).Height(21).Align(lipgloss.Center).Padding(0, 0).Border(lipgloss.NormalBorder()).UnsetBorderTop()
+	windowStyle       = lipgloss.NewStyle().BorderForeground(highlightColor).Height(21).Padding(0, 0).Border(lipgloss.NormalBorder()).UnsetBorderTop()
 	helpStyle         = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
 )
 

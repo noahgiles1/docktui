@@ -9,7 +9,10 @@ type Model struct {
 	content string
 }
 
-func New(cnt string) Model {
+var width int
+
+func New(cnt string, w int) Model {
+	width = w
 	return Model{
 		content: cnt,
 	}
@@ -24,9 +27,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	return contentStyling.Render(m.content)
+	return contentStyling.Width(width * 3).Render(m.content)
 }
 
 var (
-	contentStyling = lipgloss.NewStyle().Padding(4, 2, 0, 2).Foreground(lipgloss.Color("50"))
+	contentStyling = lipgloss.NewStyle().Padding(4, 2, 0, 2).Foreground(lipgloss.Color("50")).Align(lipgloss.Center)
 )
