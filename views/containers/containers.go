@@ -17,6 +17,8 @@ type Model struct {
 	table      table.Model
 	containers []container.Summary
 	err        error
+	height     int
+	width      int
 }
 
 type containerChangeMsg struct{}
@@ -35,7 +37,6 @@ func New() Model {
 		table.WithColumns(columns),
 		table.WithRows([]table.Row{}), // Start with empty rows
 		table.WithFocused(true),
-		table.WithHeight(5),
 	)
 
 	s := table.DefaultStyles()
@@ -51,7 +52,9 @@ func New() Model {
 	t.SetStyles(s)
 
 	return Model{
-		table: t,
+		table:  t,
+		width:  80,
+		height: 20,
 	}
 }
 
@@ -60,13 +63,25 @@ func (m Model) Init() tea.Cmd {
 		getDockerContainers,
 		tick(), // Start the periodic refresh
 	)
-
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		// Update dimensions and table height
+		m.width = msg.Width
+		m.height = msg.Height
+
+		// Calculate table height based on available space
+		tableHeight := m.height - 8 // Reserve space for headers, borders, etc.
+		if tableHeight < 3 {
+			tableHeight = 3
+		}
+
+		m.table.SetHeight(tableHeight - 3)
+		return m, nil
 	case []container.Summary:
 		// Update content and rebuild table rows
 		m.containers = msg
@@ -182,8 +197,8 @@ func tick() tea.Cmd {
 
 var (
 	baseStyle = lipgloss.NewStyle().
-			BorderStyle(lipgloss.HiddenBorder()).
-			BorderForeground(lipgloss.Color("240")).Height(21).Border(lipgloss.NormalBorder(), false, true, false, false)
+			BorderForeground(lipgloss.Color("240")).
+			Border(lipgloss.NormalBorder(), false, true, false, false)
 	helpStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("241")).
 			AlignHorizontal(lipgloss.Center).

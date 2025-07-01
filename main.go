@@ -16,18 +16,22 @@ type model struct {
 	Tabs       []string
 	TabContent []tea.Model
 	activeTab  int
+	height     int
+	width      int
 }
 
-const width = 38
+const defaultWidth = 38
 
 func newModel() model {
 	m := model{}
 	m.Tabs = []string{"Containers", "Some Tab", "Another Tab"}
 	m.TabContent = []tea.Model{
 		containerView.New(),
-		placeholderView.New("My tab content", width),
-		placeholderView.New("Woaow some more text", width),
+		placeholderView.New("My tab content", defaultWidth),
+		placeholderView.New("Woaow some more text", defaultWidth),
 	}
+	m.width = defaultWidth
+	m.height = 21
 	return m
 }
 
@@ -45,6 +49,22 @@ func (m model) Init() tea.Cmd {
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+
+		// Update the window style height based on terminal height
+		// Reserve space for tabs, help text, and padding
+		contentHeight := m.height - 6 // Adjust this value based on your UI elements
+		if contentHeight < 5 {
+			contentHeight = 5
+		}
+		// Pass the size information to tab content
+		for i, tabModel := range m.TabContent {
+			m.TabContent[i], _ = tabModel.Update(msg)
+		}
+		return m, nil
+
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "ctrl+c", "q":
@@ -73,6 +93,10 @@ func (m model) View() string {
 	doc := strings.Builder{}
 
 	var renderedTabs []string
+	tabWidth := m.width / len(m.Tabs)
+	if tabWidth < 10 {
+		tabWidth = 10
+	}
 
 	for i, t := range m.Tabs {
 		var style lipgloss.Style
@@ -92,14 +116,24 @@ func (m model) View() string {
 		} else if isLast && !isActive {
 			border.BottomRight = "┤"
 		}
-		style = style.Border(border).Width(width)
+		style = style.Border(border).Width(tabWidth - 3)
 		renderedTabs = append(renderedTabs, style.Render(t))
 	}
 
 	row := lipgloss.JoinHorizontal(lipgloss.Top, renderedTabs...)
 	doc.WriteString(row)
 	doc.WriteString("\n")
-	doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TabContent[m.activeTab].View()))
+
+	// Calculate content height dynamically
+	contentHeight := m.height - 6 // Reserve space for tabs, help, and padding
+	if contentHeight < 5 {
+		contentHeight = 5
+	}
+	windowStyleDynamic := windowStyle.
+		Width(lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize()).
+		Height(contentHeight - 3)
+
+	doc.WriteString(windowStyleDynamic.Render(m.TabContent[m.activeTab].View()))
 	doc.WriteString("\n")
 	doc.WriteString(helpStyle.Align(lipgloss.Center).Render(fmt.Sprintf("\ntab: next • ↑tab: prev • q: exit\n")))
 	return docStyle.Render(doc.String())
@@ -120,7 +154,7 @@ var (
 	highlightColor    = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "#7D56F4"}
 	inactiveTabStyle  = lipgloss.NewStyle().Border(inactiveTabBorder, true).BorderForeground(highlightColor).Padding(0, 1)
 	activeTabStyle    = inactiveTabStyle.Border(activeTabBorder, true).Foreground(lipgloss.Color("#7D56F4"))
-	windowStyle       = lipgloss.NewStyle().BorderForeground(highlightColor).Height(21).Padding(0, 0).Border(lipgloss.NormalBorder()).UnsetBorderTop()
+	windowStyle       = lipgloss.NewStyle().BorderForeground(highlightColor).Padding(1, 0).Border(lipgloss.NormalBorder()).UnsetBorderTop()
 	helpStyle         = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
 )
 
