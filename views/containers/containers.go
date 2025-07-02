@@ -8,6 +8,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"sort"
+	"strconv"
 	"time"
 )
 
@@ -25,7 +26,6 @@ type containerChangeMsg struct{}
 type tickMsg time.Time
 
 func New() Model {
-	// Initialize table
 	columns := []table.Column{
 		{Title: "", Width: 1},
 		{Title: "Name", Width: 20},
@@ -71,7 +71,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		// Update dimensions and table height
-		m.width = msg.Width
+		m.width = msg.Width - 5
 		m.height = msg.Height
 
 		// Calculate table height based on available space
@@ -79,8 +79,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if tableHeight < 3 {
 			tableHeight = 3
 		}
-
 		m.table.SetHeight(tableHeight - 3)
+		// Only update column widths if we have container data
+		if len(m.containers) > 0 {
+			m.updateColumnWidths()
+		}
 		return m, nil
 	case []container.Summary:
 		// Update content and rebuild table rows
@@ -95,6 +98,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			})
 		}
 		m.table.SetRows(rows)
+		if len(m.containers) > 0 {
+			m.updateColumnWidths()
+		}
 	case containerChangeMsg:
 		cmd = getDockerContainers
 		cmds = append(cmds, cmd)
@@ -125,9 +131,35 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) View() string {
 	views := []string{
-		baseStyle.Render(m.table.View()), // Just render the table - don't recreate it!
-		helpStyle.Render("test")}
+		baseStyle.Width(m.width / 2).Render(m.table.View()), // Just render the table - don't recreate it!
+		helpStyle.Render(strconv.Itoa(m.width))}
 	return lipgloss.JoinHorizontal(lipgloss.Top, views...)
+}
+
+func (m *Model) updateColumnWidths() {
+	maxWidth := (m.width / 2) - 10
+
+	// Calculate the maximum width needed for the State column (column 3)
+	stateColumnWidth := 10
+	for _, ctr := range m.containers {
+		if len(ctr.State) > stateColumnWidth {
+			stateColumnWidth = len(ctr.State)
+		}
+	}
+	// Add some padding
+	stateColumnWidth += 2
+
+	// Distribute remaining width between columns 1 and 2
+	remainingWidth := maxWidth - stateColumnWidth
+
+	// Get current columns and update their widths
+	columns := m.table.Columns()
+	columns[1].Width = remainingWidth / 2
+	columns[2].Width = remainingWidth / 2
+	columns[3].Width = stateColumnWidth
+
+	// Apply the updated columns to the table
+	m.table.SetColumns(columns)
 }
 
 func executeContainerOperation(containerId string, operation func(*client.Client, string) error) tea.Cmd {
@@ -197,10 +229,10 @@ func tick() tea.Cmd {
 
 var (
 	baseStyle = lipgloss.NewStyle().
-			BorderForeground(lipgloss.Color("240")).
-			Border(lipgloss.NormalBorder(), false, true, false, false)
+		BorderForeground(lipgloss.Color("240")).
+		Border(lipgloss.NormalBorder(), false, true, false, false)
 	helpStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("241")).
-			AlignHorizontal(lipgloss.Center).
-			AlignVertical(lipgloss.Bottom)
+		Foreground(lipgloss.Color("241")).
+		AlignHorizontal(lipgloss.Center).
+		AlignVertical(lipgloss.Bottom)
 )

@@ -141,7 +141,6 @@ func (m model) View() string {
 
 func main() {
 	p := tea.NewProgram(newModel())
-
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)
 	}
