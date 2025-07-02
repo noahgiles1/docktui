@@ -9,6 +9,7 @@ import (
 	"github.com/docker/docker/client"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -132,8 +133,24 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) View() string {
 	views := []string{
 		baseStyle.Width(m.width / 2).Render(m.table.View()), // Just render the table - don't recreate it!
-		helpStyle.Render(strconv.Itoa(m.width))}
+		rhsStyle.Render(rhsView(m))}
 	return lipgloss.JoinHorizontal(lipgloss.Top, views...)
+}
+
+func rhsView(m Model) string {
+	i := m.table.Rows()
+	if len(i) == 0 {
+		return "Loading..."
+	}
+	cntr := m.containers[m.table.Cursor()]
+	s := strings.Builder{}
+	s.WriteString(cntr.Names[0] + " : " + cntr.Status + "\n\n")
+	for _, port := range cntr.Ports {
+		s.WriteString(strconv.Itoa(int(port.PublicPort)) + ":" + strconv.Itoa(int(port.PrivatePort)) + "\n")
+	}
+	s.WriteString(cntr.Image + "\n")
+	s.WriteString(cntr.State + "\n")
+	return s.String()
 }
 
 func (m *Model) updateColumnWidths() {
@@ -231,8 +248,6 @@ var (
 	baseStyle = lipgloss.NewStyle().
 		BorderForeground(lipgloss.Color("240")).
 		Border(lipgloss.NormalBorder(), false, true, false, false)
-	helpStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("241")).
-		AlignHorizontal(lipgloss.Center).
-		AlignVertical(lipgloss.Bottom)
+	rhsStyle = lipgloss.NewStyle().
+		Padding(0, 2, 0, 2)
 )
